@@ -31,11 +31,34 @@ app.post('/signup', async(req, res) => {
     const existingUser = await collection.findOne({name: data.name});
     if(existingUser){
         res.send("User already exist , choose diffrent username");
-    }
+    }else {
+        //hash the password with bcrypt
+        const saltRounds = 10;
+        const hashedPassword = await crypt.hash(data.password, saltRounds);
+        data.password = hashedPassword; //Replace the password with the hashed password
 
-    const userdata = await collection.insertMany(data);
-    console.log(userdata);
+        const userdata = await collection.insertMany(data);
+        console.log(userdata);
+    }
 });
+//Login user
+app.post('/login', async(req, res) => {
+    try{
+            const check = await collection.findOne({name: req.body.username});
+            if(!check){
+                res.send("Username not found");
+            }
+            //compare the password with the plain text 
+            const isPasswordMatch = await crypt.compare(req.body.password, check.password);
+            if(isPasswordMatch){
+                res.send("home");
+            }else {
+                    res.send("Password is incorrect");
+                }
+        }catch{
+            res.send("An error occured");
+    }
+    });
 
 const port = 5000;
 app.listen(port, () => {
